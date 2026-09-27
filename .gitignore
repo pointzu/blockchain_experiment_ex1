@@ -1,0 +1,12 @@
+private_key.local.txt
+私钥.png
+__pycache__/
+*.pyc
+报告/build/
+报告/qa/
+报告/*.aux
+报告/*.log
+报告/*.out
+报告/*.synctex.gz
+报告/*.xdv
+tmp*/

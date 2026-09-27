@@ -1,0 +1,66 @@
+Ex1 已完成脚本：运行和截图顺序
+本文件对应现在的脚本版本。旧版《动手实验指南》中的手动修改步骤已由脚本实现，不要再覆盖代码。
+
+1. 配置原私钥（只在本地）
+打开 config.py，把 PRIVATE_KEY_WIF 的 X 替换为领取时保存的原私钥。
+课程 DLL 路径现在由 runtime_setup.py 自动处理。不要重新生成私钥。
+原地址：mzT3NxNH1iGLvKiHDzJyN4NtLogEFLv3A2。代码会校验派生地址是否匹配。
+
+2. 打开 PowerShell，执行：
+Set-Location -LiteralPath 'C:\Users\pointzu\Desktop\大三上\区块链基础及应用\实验\Ex1'
+python -m pip install -r requirements.txt
+python -c "from config import my_address; print(my_address)"
+
+3. 预览分币：
+python '.\split_test_coins .py'
+必须看到：Input 150524 sat、Outputs 10、每个 14900 sat、Fee 1524 sat、VerifyScript PASS。
+最后 PREVIEW ONLY 表示没有广播，这是预览检查，不是实验成功截图。
+
+4. 正式广播分币并保存输出：
+python '.\split_test_coins .py' --broadcast 2>&1 | Tee-Object -FilePath '.\split_output.txt'
+应看到 HTTP 200、真实新交易哈希、Saved、Explorer 链接。
+截第一张图：保留运行命令、自己的地址、领取交易 txid 和 vout=1、十个输出、手续费、VerifyScript PASS、HTTP 成功、新 txid。
+窗口不够时可截两张连续图，或调小字号扩大终端。截图命名：01_分币终端.png。
+
+5. 检查确认：
+python '.\check_results.py'
+进入分币的 Screenshot URL 网页。按 Win+Shift+S 截图：
+应包含 testnet 标识、分币 txid、Confirmed/确认信息、自己的地址以及十个 0.000149 BTC 输出。
+页面较长可以分两张连续图，确保覆盖十个输出。截图命名：02_分币确认.png（必要时加 _下半部分）。
+交易未确认时可以查看，但等 Confirmed 后再作为最终结果提交。
+
+6. 预览 Ex1 发币：
+python '.\ex1.py'
+脚本自动从 transactions.py 读取分币哈希，无需手动粘贴。
+应看到 Recipient mv4rnyY3Su5gjcDNzbMLKBQkBicCtHUtFB、Input 14900 sat、Outputs 1、输出 13900 sat、Fee 1000 sat、VerifyScript PASS。
+如果分币未确认或输出已被花掉，脚本会停止，按错误提示检查，不要反复广播。
+
+7. 正式广播 Ex1 并保存输出：
+python '.\ex1.py' --broadcast 2>&1 | Tee-Object -FilePath '.\ex1_output.txt'
+截第三张图：运行命令、收款地址、分币 txid/vout=0、金额、手续费、校验通过、HTTP 成功和发币新哈希。
+截图命名：03_发币终端.png。
+
+8. 最终确认截图：
+python '.\check_results.py' 2>&1 | Tee-Object -FilePath '.\chain_status.txt'
+进入 Ex1 的 Screenshot URL。等 Confirmed，截图保留 testnet 标识、发币 txid、确认状态、输入引用分币交易、输出课程地址和 0.000139 BTC。
+截图命名：04_发币确认.png。
+网站显示金额可能为 BTC 或 sat：13900 sat = 0.000139 BTC。
+
+9. 提交材料
+代码：config.py、ex1.py、split_test_coins .py、utils.py、runtime_setup.py、transactions.py；可一起附 check_results.py 和 requirements.txt。
+输出：split_output.txt、ex1_output.txt；chain_status.txt 为补充。
+截图：原领取截图、上述四类截图。
+只提交真实运行和真实链上结果。私钥不应出现在截图或公开报告中。
+
+金额预算
+领取输入：150524 sat。
+分币：10 × 14900 sat + 1524 sat 手续费。
+发币：花其中一份，13900 sat 给课程地址 + 1000 sat 手续费。
+余下九份仍属于你，合计 134100 sat。
+手续费按编写时 testnet3 约 1 sat/vB 的查询结果留有余量；运行若隔很久，先检查当前费率。
+
+广播异常处理
+遇到超时或连接中断，交易可能已提交；先用终端 Local txid 查网页，或查看自己地址的交易记录，不要盲目重跑。
+若链上确认已经成功，但 transactions.py 没有记录，在本地将实际分币哈希填入 split_txid（或发币哈希填入 ex1_txid）即可继续查询。
+HTTP 接受交易不等于确认，终端图和链上确认图都需要。
+默认运行是预览，只有显式添加 --broadcast 才会提交。

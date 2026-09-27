@@ -1,0 +1,47 @@
+
+=== 领取 / faucet ===
+TXID: 0d9b2e7b232bc18f54d3c86a77cf1900c3cf544f83c0610b083fc69490345560
+Status: Confirmed
+Block height: 5148688
+Fee: 217 sat
+Inputs:
+  812989457749589d82f6c8afa76f9c16cc974f928557c973d1aafb6c902285dc vout= 0
+  cfba08cc2f3f6b578801a3800b6a5b76aecc8edab43efe121fcfc9929fc666ea vout= 0
+Outputs:
+  [0] mtA8mbYJaxM8bW6X54H62jE9WNR6DGSAKC: 978892752 sat
+  [1] mzT3NxNH1iGLvKiHDzJyN4NtLogEFLv3A2: 150524 sat
+Screenshot URL: https://blockstream.info/testnet/tx/0d9b2e7b232bc18f54d3c86a77cf1900c3cf544f83c0610b083fc69490345560
+Alternative: https://mempool.space/testnet/tx/0d9b2e7b232bc18f54d3c86a77cf1900c3cf544f83c0610b083fc69490345560
+
+=== 分币 / split ===
+TXID: 86c6408a8b95ca4bd7fa71c3f2ef362016d3fc4ef01e59fc62742d1c5eeae2d6
+Status: Confirmed
+Block height: 5151331
+Fee: 1524 sat
+Inputs:
+  0d9b2e7b232bc18f54d3c86a77cf1900c3cf544f83c0610b083fc69490345560 vout= 1
+Outputs:
+  [0] mzT3NxNH1iGLvKiHDzJyN4NtLogEFLv3A2: 14900 sat
+  [1] mzT3NxNH1iGLvKiHDzJyN4NtLogEFLv3A2: 14900 sat
+  [2] mzT3NxNH1iGLvKiHDzJyN4NtLogEFLv3A2: 14900 sat
+  [3] mzT3NxNH1iGLvKiHDzJyN4NtLogEFLv3A2: 14900 sat
+  [4] mzT3NxNH1iGLvKiHDzJyN4NtLogEFLv3A2: 14900 sat
+  [5] mzT3NxNH1iGLvKiHDzJyN4NtLogEFLv3A2: 14900 sat
+  [6] mzT3NxNH1iGLvKiHDzJyN4NtLogEFLv3A2: 14900 sat
+  [7] mzT3NxNH1iGLvKiHDzJyN4NtLogEFLv3A2: 14900 sat
+  [8] mzT3NxNH1iGLvKiHDzJyN4NtLogEFLv3A2: 14900 sat
+  [9] mzT3NxNH1iGLvKiHDzJyN4NtLogEFLv3A2: 14900 sat
+Screenshot URL: https://blockstream.info/testnet/tx/86c6408a8b95ca4bd7fa71c3f2ef362016d3fc4ef01e59fc62742d1c5eeae2d6
+Alternative: https://mempool.space/testnet/tx/86c6408a8b95ca4bd7fa71c3f2ef362016d3fc4ef01e59fc62742d1c5eeae2d6
+
+=== 发币 / Ex1 ===
+TXID: c49a4a8c6772d1b5fc51814b20cbc5e57dce8d58c8896b00226a4e94c05dd4e6
+Status: Confirmed
+Block height: 5151332
+Fee: 1000 sat
+Inputs:
+  86c6408a8b95ca4bd7fa71c3f2ef362016d3fc4ef01e59fc62742d1c5eeae2d6 vout= 0
+Outputs:
+  [0] mv4rnyY3Su5gjcDNzbMLKBQkBicCtHUtFB: 13900 sat
+Screenshot URL: https://blockstream.info/testnet/tx/c49a4a8c6772d1b5fc51814b20cbc5e57dce8d58c8896b00226a4e94c05dd4e6
+Alternative: https://mempool.space/testnet/tx/c49a4a8c6772d1b5fc51814b20cbc5e57dce8d58c8896b00226a4e94c05dd4e6

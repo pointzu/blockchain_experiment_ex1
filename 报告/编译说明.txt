@@ -1,0 +1,9 @@
+邹俊轩（2412592）Ex1 LaTeX 报告源码
+
+使用 XeLaTeX 编译，需安装 TeX Live，文档采用 ctexart 和 Windows 中文字体。
+在 main.tex 所在目录运行：
+mkdir build
+xelatex -interaction=nonstopmode -halt-on-error -output-directory=build main.tex
+xelatex -interaction=nonstopmode -halt-on-error -output-directory=build main.tex
+
+assets 为实验原始截图，报告未包含私钥。正式 PDF 已单独交付。

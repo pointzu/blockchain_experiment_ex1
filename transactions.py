@@ -1,0 +1,4 @@
+# 实际广播成功的交易哈希；链上确认另行检查。
+faucet_txid = '0d9b2e7b232bc18f54d3c86a77cf1900c3cf544f83c0610b083fc69490345560'
+split_txid = '86c6408a8b95ca4bd7fa71c3f2ef362016d3fc4ef01e59fc62742d1c5eeae2d6'
+ex1_txid = 'c49a4a8c6772d1b5fc51814b20cbc5e57dce8d58c8896b00226a4e94c05dd4e6'

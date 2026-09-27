@@ -1,0 +1,220 @@
+Ex1 动手实验指南（按你的实际领取交易整理）
+更新说明：2026-09-28 脚本已补全。当前操作请以同目录《运行与截图说明.txt》为准；下面的手动修改步骤是旧版讲解，不要再覆盖已完成的代码。当前脚本默认预览，需加 --broadcast 才广播，config.py 中请填写 PRIVATE_KEY_WIF。
+
+一、目标和依据
+
+按 Ex1.pdf 的要求：配置已有私钥，把领取的测试币拆成多个输出，显式编写 P2PKH 的锁定/解锁脚本，花费其中一个输出并转到课程 config.py 给定的 faucet_address，最后核对链上确认。
+要求.txt 要求提交：填好的脚本源代码、交易输出结果、相关截图。PDF 还要求在 transactions.py 保存新创建的交易哈希。
+学长资料用于参考流程和代码；其中的私钥、地址、交易哈希、金额和输出编号不能照搬。
+助教提示：使用 testnet3；BlockCypher 查不到时用 mempool 和 Blockstream 查询。DLL 修复和 DNS 建议只在遇到对应问题时适用。
+
+本指南没有替你广播交易，没有修改课程原始脚本。下面由你依次编辑和运行。
+
+二、已经核实的起点（2026-09-27 查询）
+
+地址：mzT3NxNH1iGLvKiHDzJyN4NtLogEFLv3A2
+领取 txid：0d9b2e7b232bc18f54d3c86a77cf1900c3cf544f83c0610b083fc69490345560
+你的输出编号 vout：1
+金额：150524 sat = 0.00150524 BTC
+状态：已确认，查询时仍是未花费输出。
+
+查询地址：
+https://blockstream.info/testnet/address/mzT3NxNH1iGLvKiHDzJyN4NtLogEFLv3A2
+https://mempool.space/testnet/address/mzT3NxNH1iGLvKiHDzJyN4NtLogEFLv3A2
+原始交易：
+https://blockstream.info/testnet/tx/0d9b2e7b232bc18f54d3c86a77cf1900c3cf544f83c0610b083fc69490345560
+
+这笔领取交易有两个输出，你的地址在第二个输出中，所以编号是 1。编号从 0 开始，和你以前是否做过交易无关。
+实际运行前再次检查未花费状态；做完分币后，这个领取输出会被花掉，后续应使用新的分币交易哈希。
+
+三、先解决环境，再配置原来的私钥
+
+1. 打开 PowerShell，进入实验目录：
+
+Set-Location -LiteralPath 'C:\Users\pointzu\Desktop\大三上\区块链基础及应用\实验\Ex1'
+python -m pip install -r requirements.txt
+
+2. 这台电脑的 64 位 Python 当前会从 D:\Print Conductor 找到其他软件的 libeay32.dll，导入 bitcoin.wallet 时出现 WinError 193。
+ObtainTestcoin 中已有的 libeay32.dll 是 64 位，已验证能支持本实验导入。执行下面命令让当前 PowerShell 优先找到它：
+
+$env:PATH = 'C:\Users\pointzu\Desktop\大三上\区块链基础及应用\ObtainTestcoin;' + $env:PATH
+python -c "from bitcoin.wallet import CBitcoinSecret; print('bitcoin.wallet 导入成功')"
+
+这只对当前 PowerShell 会话生效。后面的实验命令都在同一个窗口运行；重新开窗口需重新执行 PATH 命令。
+本方法使用已有 DLL，无需改系统 DNS 或写入 Python 安装目录。DNS 问题和 DLL 问题是两回事。
+
+3. config.py 目前仍是 X 占位符。用你当初生成 mzT3NxNH1iGLvKiHDzJyN4NtLogEFLv3A2 时保存的私钥替换：
+
+my_private_key = CBitcoinSecret('在本地填写原来领取地址对应的私钥')
+
+保留 SelectParams('testnet')。不要重新运行 keygen.py 来替代原来的私钥：新生成的私钥不能花费原来地址中的币。
+修改后运行：
+
+python -c "from config import my_address; print(my_address)"
+
+必须输出：mzT3NxNH1iGLvKiHDzJyN4NtLogEFLv3A2
+如果地址不相同，先找回原来的私钥，不要继续分币。私钥只在本地填写，不需要发给我，也不要截图到公开报告中。
+
+4. config.py 的课程收款地址是：
+mv4rnyY3Su5gjcDNzbMLKBQkBicCtHUtFB
+
+保留课程给定的 faucet_address。领取网页显示的 tb1q... 是另一个地址，且采用不同脚本类型，不能直接套进本实验的 P2PKH 实现。
+
+四、修正金额转换，并准备广播接口
+
+1. utils.py 中原 create_txout 使用 amount*COIN，可能产生浮点数，不适合交易输出的整数 satoshi。文件顶部加：
+
+from decimal import Decimal
+
+把 create_txout 替换为：
+
+def create_txout(amount, scriptPubKey):
+    satoshis = Decimal(str(amount)) * COIN
+    if satoshis != satoshis.to_integral_value():
+        raise ValueError('金额不能包含不足 1 satoshi 的部分')
+    if satoshis <= 0:
+        raise ValueError('输出金额必须大于 0')
+    return CMutableTxOut(int(satoshis), CScript(scriptPubKey))
+
+2. 课程原 broadcast_transaction 使用 BlockCypher。它目前对你的领取交易返回 404；助教关于更换浏览器的提示仅涉及查询，并没有明确要求更换广播接口。
+为避开旧接口无法索引输入的潜在问题，本指南建议把 utils.py 的 broadcast_transaction 改为官方 Esplora 接口：
+
+def broadcast_transaction(tx):
+    raw_transaction = b2x(tx.serialize())
+    return requests.post(
+        'https://blockstream.info/testnet/api/tx',
+        data=raw_transaction,
+        headers={'Content-Type': 'text/plain'},
+        timeout=30,
+    )
+
+这项改动属于本指南的兼容性建议。报告中如实写明原因。Esplora 要求请求正文直接是十六进制交易，不是 {"tx": ...} JSON。
+官方文档：https://github.com/Blockstream/esplora/blob/master/API.md
+成功响应通常为 HTTP 200，正文为 64 位交易哈希，和 BlockCypher 的 JSON 响应格式不同。
+修改接口不会立即广播，只有运行分币或发币脚本时才提交交易。
+
+五、自己编辑分币脚本
+
+打开 split_test_coins .py（注意文件名在 .py 前有一个空格）。在顶部添加：
+
+from decimal import Decimal
+
+在 main 中填写：
+
+    amount_to_send = Decimal('0.00149')
+    txid_to_spend = (
+        '0d9b2e7b232bc18f54d3c86a77cf1900c3cf544f83c0610b083fc69490345560')
+    utxo_index = 1
+    n = 10
+
+其他代码可保留。也可以把原来的 [txout]*n 改成每次创建独立输出，阅读更直观：
+
+    tx = CMutableTransaction(
+        [txin],
+        [create_txout(amount_to_send / n, txout_scriptPubKey)
+         for _ in range(n)],
+    )
+
+这里 amount_to_send 是十个输出的总金额：
+输入 150524 sat = 十份输出 14900 sat × 10 + 手续费 1524 sat。
+十份都回到你自己的地址，可以用于之后的实验。
+PDF 要求至少三份，并建议可以分十份；学长也选择十份。本方案按十份操作。
+
+查询时 testnet3 推荐费率为 1 sat/vB。十输出交易约 500 字节，1524 sat 有余量，但不是课程规定值，也不保证日后仍适用。
+运行当天可以查看：https://mempool.space/testnet/api/v1/fees/recommended
+如果费率明显上涨，先调整金额预算；不要照搬 PDF 中示例的 0.001 BTC 手续费。
+
+执行前检查：地址匹配、原输出仍未花费、txid 无误、utxo_index=1、Decimal 金额正确。
+然后运行一次并保存输出：
+
+python '.\split_test_coins .py' 2>&1 | Tee-Object -FilePath '.\split_output.txt'
+
+成功时保存返回的分币交易哈希，记为 SPLIT_TXID。不要把领取哈希误当分币哈希。
+在浏览器打开：https://blockstream.info/testnet/tx/SPLIT_TXID
+用实际哈希替换 SPLIT_TXID，检查十个输出都为自己的地址，每份 0.000149 BTC；保存终端和网页截图。
+等交易显示 Confirmed 后进行下一步。
+
+如果请求超时，交易可能已经提交。先查地址交易记录/UTXO，确认是否产生分币交易，再决定是否需要重试。
+不要盲目重跑：同一个输出只能被花费一次。
+
+六、自己补全 ex1.py 的 P2PKH
+
+1. 锁定脚本需要“复制公钥、计算哈希、匹配指定公钥哈希、验证签名”。把函数改为：
+
+def P2PKH_scriptPubKey(address):
+    return [
+        OP_DUP,
+        OP_HASH160,
+        bytes(address),
+        OP_EQUALVERIFY,
+        OP_CHECKSIG,
+    ]
+
+此处参数必须是 P2PKH 地址。bytes(address) 是解码后 20 字节的公钥哈希，不是地址字符串的 UTF-8 编码。
+学长从标准脚本的 [3:-2] 截取哈希也能用于标准 P2PKH，但直接取地址 payload 更清楚。
+不要用 return address.to_scriptPubKey() 代替这一 TODO：课程要求在操作码级别显式编写脚本。
+
+2. 解锁脚本把签名和公钥依次放入栈。改为：
+
+def P2PKH_scriptSig(txin, txout, txin_scriptPubKey):
+    signature = create_OP_CHECKSIG_signature(
+        txin, txout, txin_scriptPubKey, my_private_key)
+    return [signature, my_public_key]
+
+create_OP_CHECKSIG_signature 已计算交易签名摘要，签名后还附加 SIGHASH_ALL 标识，不需要你重复签名。
+VerifyScript 会在广播前检查本地脚本，但不会替你确认输入仍未花费、真实前序输出金额或链上确认状态。
+
+3. ex1.py 顶部添加：
+
+from decimal import Decimal
+
+main 中填写：
+
+    amount_to_send = Decimal('0.000139')
+    txid_to_spend = '填写刚才成功分币得到的 SPLIT_TXID'
+    utxo_index = 0
+
+这里的 0 不是因为第一次交易，而是分币交易的 0 号输出也是你的地址。先查它仍未花费。
+若用了别的分币金额/份数，应按实际输出金额重新计算，不能直接用此处金额。
+按本指南：输入一份 14900 sat = 发到课程地址 13900 sat + 手续费 1000 sat。
+这笔交易只花其中一份，剩余九份仍在你的地址。
+
+保留 main 中用 faucet_address 生成 txout_scriptPubKey 的代码。检查后运行一次：
+
+python '.\ex1.py' 2>&1 | Tee-Object -FilePath '.\ex1_output.txt'
+
+成功响应中的新哈希记为 EX1_TXID。
+打开：https://blockstream.info/testnet/tx/EX1_TXID
+核对：输入引用 SPLIT_TXID 的 0 号输出；输出地址是 mv4rnyY3Su5gjcDNzbMLKBQkBicCtHUtFB；输出金额为 0.000139 BTC。
+等 Confirmed 后保存截图。HTTP 200 表示接口接受交易，不能代替链上确认。
+
+七、保存记录和交付材料
+
+自己创建 transactions.py，填实际新哈希：
+
+faucet_txid = '0d9b2e7b232bc18f54d3c86a77cf1900c3cf544f83c0610b083fc69490345560'
+split_txid = '实际分币交易哈希'
+ex1_txid = '实际发币交易哈希'
+
+保存：
+1. 填好的 ex1.py、split_test_coins .py，以及实际修改的 utils.py/config.py、transactions.py，按课程要求打包。
+2. split_output.txt、ex1_output.txt 的真实运行输出。
+3. 领取截图、分币终端截图、分币已确认且有十个输出的网页截图、发币终端截图、发币已确认的网页截图。
+
+不要把私钥放入公开报告或公开代码库。若课程确实要求交含测试私钥的 config.py，仅按课程指定方式提交。
+学长写了完整报告，可参考“目标、关键代码解释、参数与金额计算、实际结果、问题与解决”结构，但要求.txt 本身只列出了源代码、输出、截图，不要把学长的额外格式当作硬性要求。
+不要复制学长的截图或冒用其交易哈希。
+
+八、常见错误
+
+WinError 193 / NoneType：先在同一个 PowerShell 执行第三节的 DLL 路径命令，再验证导入。
+Base58 校验失败：检查私钥是否仍为 X、复制是否完整、有没有空格。无需展示私钥。
+config 地址不一致：使用了另一个私钥；先找回领取地址对应的原私钥。
+整数类型或浮点金额报错：确认 utils.py 使用 Decimal 转整数，金额变量也使用 Decimal。
+missing inputs / input not found：检查 txid、vout、网络和未花费状态；发币时应引用分币哈希。
+already spent / txn-mempool-conflict：先检查链上记录，避免重复花费。
+脚本校验失败：核对使用的私钥、公钥、输入地址以及两个 TODO 的顺序。
+手续费不足：查询当前费率，重新计算输出金额；先检查原交易是否已入池。
+查询不到：确认路径含 /testnet/，不要去主网、testnet4 或 signet 查询；BlockCypher 查不到不等于没有到账。
+
+离线验证说明：已用临时生成的测试密钥验证上述操作码脚本、十输出分币、签名和金额计算；均通过 VerifyScript。没有使用你的私钥，没有广播测试交易。你的实际实验是否完成仍以真实广播结果及链上确认截图为准。
